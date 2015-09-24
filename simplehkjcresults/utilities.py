@@ -81,9 +81,17 @@ def get_racecoursecode(longname):
     else:
         return None
 
+def dec_odds_to_pchance(odds):
+    if odds is None:
+        return None
+    return 1/float(odds)
+
+
 def removeunicode(value):
     return value.encode('ascii', 'ignore')
-
+'''
+expected format: ?? 
+'''
 def get_sec(s):
     if isinstance(s, list):
         s = s[0]
@@ -96,6 +104,15 @@ def get_sec(s):
             return float(l[0])*60 + float(l[1]) + (float(l[2])*0.01)
     except ValueError:
         return s
+
+def getodds(odds):
+    if odds == u'---':
+        return None
+    odds = cleanstring(odds)
+    if odds is None:
+        return None
+    else:
+        return try_float(odds)
 
 def cleanstring(s):
     pattern = re.compile(r'\s+')
@@ -376,10 +393,19 @@ def try_int(value):
     except:
         return 0
 
+'''
+sanitize string
+NEED TO TEST 
+'''
 def getHorseReport(ir, h):
-    lir = ir.split('.')
-    return [e.replace(".\\n", "...") for e in lir if h in e]
+    ir =  santitizeracereport(ir)
+    # h_pat = re.compile('.*{}.*'.format(h))
+    return [e.strip().replace(".\\n", ">") for e in lir if h.upper() in e]
 
+def santitizeracereport(ir):
+    import unicodedata
+    ir = ''.join(c for c in ir if not unicodedata.combining(c))
+    return ir.split('.').strip()
 
 #done in default output processor?
 def noentryprocessor(value):
