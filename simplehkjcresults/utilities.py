@@ -89,6 +89,19 @@ def dec_odds_to_pchance(odds):
 
 def removeunicode(value):
     return value.encode('ascii', 'ignore')
+
+
+### TIME PROCESSOR CLASS
+'''
+expecting format ss.mm
+'''
+def get_sec_in_secs(s):
+    if s == u'--' or s == u'' or s is None:
+        return None
+    l = s.split('.') #array min, secs, milli - we want seconds
+    # l[0]*60 + l[1] + l[2]/60.0
+    return float(l[0]) +(float(l[1])*0.01)
+
 '''
 expected format: ?? 
 '''
@@ -400,12 +413,12 @@ NEED TO TEST
 def getHorseReport(ir, h):
     ir =  santitizeracereport(ir)
     # h_pat = re.compile('.*{}.*'.format(h))
-    return [e.strip().replace(".\\n", ">") for e in lir if h.upper() in e]
+    return [e.strip().replace(".\\n", ">") for e in ir if h.upper() in e]
 
 def santitizeracereport(ir):
     import unicodedata
     ir = ''.join(c for c in ir if not unicodedata.combining(c))
-    return ir.split('.').strip()
+    return ir.split('.')
 
 #done in default output processor?
 def noentryprocessor(value):
