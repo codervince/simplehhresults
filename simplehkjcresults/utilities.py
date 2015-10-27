@@ -331,7 +331,103 @@ def isFavorite(oddscolor):
         return bool(0)
 
 
+##############CLASS GOINGS?#########################
+def isAWT(surfacestring):
+    return surfacestring in ['AWT', 'All Weather Track']
 
+def get_goingabb(g, track):
+    g = g.strip().upper()
+    goings = {
+    u"GOOD": u'G',
+    u"GOOD TO FIRM": u'GF',
+    u"GOOD TO YIELDING": u'GY'
+    }
+    awt_goings = {
+    u'GOOD': u'GD',
+    u'WET FAST': u'WF',
+    u'WET SLOW': u'WS'
+    }
+    if track.upper() == u'ALL WEATHER TRACK':
+        return awt_goings.get(g, "None")
+    else:
+        return goings.get(g, "None")
+
+## poss: "TURF - "B+2" COURSE" or "ALL WEATHER TRACK"
+def get_surface_railtype(s):
+    s = s.strip()
+    print "SurfaceRailType {}".format(s)
+    if s == u"ALL WEATHER TRACK":
+        return "ALL WEATHER TRACK", None
+    else:
+        #expecting turf
+        _surf, _rail = s.split(u',') #comma
+        _rail = _Rail.strip()
+        re_patt = re.compile("\"([ABCD+0-9])*\"")
+        _rail = re_patt.match(_rail).group(0).replace(u'"', '')
+        return _surf, _rail
+
+def get_raceclassforspeeds(cl):
+    hkjcclasses = {
+    "HongKongGroupThree": u'Group',
+    "HongKongGroupTwo": u'Group',
+    "HongKongGroupOne": u'Group',
+    "Class1": u'Class 1',
+    "Class2": u'Class 2',
+    "Class3": u'Class 3',
+    "Class4": u'Class 4',
+    "Class5": u'Class 5',
+    "1": u'Class 1',
+    "2": u'Class 2',
+    "3": u'Class 3',
+    "4": u'Class 4',
+    "4S": u'Class 4',
+    "5": u'Class 5',
+    "Griffin": u'Griffin',
+    }
+    return hkjcclasses.get(cl, "None")
+
+def get_raceclass(cl):
+    hkjcclasses = {
+    "HongKongGroupThree": u'HKG3',
+    "HongKongGroupTwo": u'HKG2',
+    "HongKongGroupOne": u'HKG1',
+    "Class1": u'1',
+    "Class2": u'2',
+    "Class3": u'3',
+    "Class4": u'4',
+    "Class5": u'5',
+    "RestrictedRace": u'R',
+    }
+    return hkjcclasses.get(cl, "None")
+
+
+###################################SPEEDS
+HORSE_LENGTH = 0.3048 #=8 feet
+
+#takes the race disyance and returns the tiem per length
+def gettimeperlength(d, ft):
+    if d is None or ft is None:
+        return None
+    try:
+        ft = try_float(ft)
+        if ft is not None and ft != 0.0:
+            ls = float(d)/HORSE_LENGTH #number of lengths
+            return ft/ls
+    except ValueError,TypeError:
+        return None
+
+def getmetaspeedrank(htl, rectl):
+    return round( (rectl/htl)*1000,0)
+
+#get record time for this d, rc, cl, date
+
+#need to add data and import HOW first
+# def getmetaspeedrank(rc, cl, d, ft):
+#     #get no of lengths
+#     myh = gettimeperlength(d,ft)
+#     #get rcrd
+#     rcrd = 0.98 
+#     return (myh/rcrd)*1000
 
 ##########
 
@@ -412,8 +508,10 @@ NEED TO TEST
 '''
 def getHorseReport(ir, h):
     ir =  santitizeracereport(ir)
+    l = [x.strip() for x in ir]
     # h_pat = re.compile('.*{}.*'.format(h))
-    return [e.strip().replace(".\\n", ">") for e in ir if h.upper() in e]
+    l= [e.strip().replace(".\\n", ">") for e in ir if h.upper() in e]
+    return "".join(l)
 
 def santitizeracereport(ir):
     import unicodedata

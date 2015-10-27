@@ -34,7 +34,14 @@ LOG_FILE = "scrapy_%s_%s.log" % ('hkjcsimpleresults_', datetime.now().date())
 #             'password': '',
 #             'database': 'hkraces4'}
 
-
+DATABASE = {
+'drivername': 'postgres',
+'host': 'localhost',
+'port': '5432',
+'username': 'vmac',
+'password': '',
+'database': 'hkresultd_oct15'
+}
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
 #CONCURRENT_REQUESTS=32

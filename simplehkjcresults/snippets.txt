@@ -1,0 +1,3 @@
+vmac@ubuntu:~/simplehkjcresults$ sudo -u postgres psql postgres
+postgres=# create database hkresults_oct15;
+CREATE DATABASE
