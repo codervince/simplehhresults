@@ -353,6 +353,25 @@ def get_goingabb(g, track):
         return goings.get(g, "None")
 
 ## poss: "TURF - "B+2" COURSE" or "ALL WEATHER TRACK"
+##FIX THIS
+
+
+def tsplit(string, delimiters):
+    """Behaves str.split but supports multiple delimiters.
+    usage: tsplit(s, (',', '/', '-'))
+    """    
+    delimiters = tuple(delimiters)
+    stack = [string,]
+    
+    for delimiter in delimiters:
+        for i, substring in enumerate(stack):
+            substack = substring.split(delimiter)
+            stack.pop(i)
+            for j, _substring in enumerate(substack):
+                stack.insert(i+j, _substring) 
+    return stack
+
+
 def get_surface_railtype(s):
     s = s.strip()
     print "SurfaceRailType {}".format(s)
@@ -360,14 +379,18 @@ def get_surface_railtype(s):
         return "ALL WEATHER TRACK", None
     else:
         #expecting turf
-        _surf, _rail = s.split(u',') #comma
-        _rail = _Rail.strip()
+        _surf, _rail = tsplit(s, (',', '-')) #comma or '-'
+        _rail = _rail.strip()
         re_patt = re.compile("\"([ABCD+0-9])*\"")
         _rail = re_patt.match(_rail).group(0).replace(u'"', '')
         return _surf, _rail
 
 def get_raceclassforspeeds(cl):
+    cl = cl.strip()
     hkjcclasses = {
+    "Hong Kong Group One": u'Group',
+    "Hong Kong Group Two": u'Group',
+    "Hong Kong Group Three": u'Group',
     "HongKongGroupThree": u'Group',
     "HongKongGroupTwo": u'Group',
     "HongKongGroupOne": u'Group',
@@ -376,6 +399,11 @@ def get_raceclassforspeeds(cl):
     "Class3": u'Class 3',
     "Class4": u'Class 4',
     "Class5": u'Class 5',
+    "Class 1": u'Class 1',
+    "Class 2": u'Class 2',
+    "Class 3": u'Class 3',
+    "Class 4": u'Class 4',
+    "Class 5": u'Class 5',
     "1": u'Class 1',
     "2": u'Class 2',
     "3": u'Class 3',
@@ -417,7 +445,8 @@ def gettimeperlength(d, ft):
         return None
 
 def getmetaspeedrank(htl, rectl):
-    return round( (rectl/htl)*1000,0)
+    if htl is not None and rectl is not None:
+        return round( (rectl/htl)*1000,0)
 
 #get record time for this d, rc, cl, date
 

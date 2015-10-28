@@ -51,7 +51,7 @@ def generatestandardtimes(surface):
 class Simplehkjcspider(scrapy.Spider):
 	
     name = "simplehkjcresults"
-    allowed_domains = ["hkjc.com"]
+    allowed_domains = ["hkjc.com", "http://www.hkjc.com", "http://racing.hkjc.com"]
 
     def __init__(self, date, racecoursecode, *args, **kwargs):
         assert racecoursecode in ['ST', 'HV']
@@ -95,12 +95,7 @@ class Simplehkjcspider(scrapy.Spider):
             yield request
 
     def parse_race(self, response):
-
-
-        '''
-        racestats
-
-        '''
+        '''racestats'''
         #RACESTATS
         #[u'Class 4 - ', u'1650M - (60-40)', u'Going :', u'WET SLOW', u'SUNBIRD HANDICAP', u'Course :', u'ALL WEATHER TRACK', u'HK$ 800,000', u'Time :', u'(28.53)', u'(52.70)', u'(1.17.43)', u'(1.41.38)', u'\xa0', u'Sectional Time :', u'28.53', u'24.17', u'24.73', u'23.95', u'\xa0Multi Angle Race Replay', u'\xa0\xa0\xa0\xa0', u'\xa0Pass Through Analysis', u'\xa0\xa0\xa0\xa0', u'\xa0Aerial Virtual Replay']
 
@@ -170,8 +165,7 @@ class Simplehkjcspider(scrapy.Spider):
         ##RUNNERS
 
 
-        sectional_time_url = response.xpath('//div[@class="rowDiv15"]/div['
-            '@class="rowDivRight"]/a/@href').extract()[0]
+        sectional_time_url = response.xpath('//div[@class="rowDiv15"]/div[@class="rowDivRight"]/a/@href').extract()[0]
         horsecodelist_ = response.xpath('//table[@class="tableBorder trBgBlue'
             ' tdAlignC number12 draggable"]//td[@class="tdAlignL font13'
             ' fontStyle"][1]/text()').extract()
@@ -355,7 +349,10 @@ class Simplehkjcspider(scrapy.Spider):
         #GET SPEEDS FROM FILE ##
         standardspeeds = Vividict()
         standardspeeds= generatestandardtimes(racesurface)
-        logger.info("**standardspeeds dump {}".format(standardspeeds))
+        # logger.info("**standardspeeds dump {}".format(standardspeeds))
+
+        #get raceclass for speeds
+        raceclass = get_raceclassforspeeds(raceclass)
 
         stdtime = standardspeeds['20150906'][self.racecoursecode][racedistance][raceclass]['finish']
         recordtime =  standardspeeds['20150906'][self.racecoursecode][racedistance][raceclass]['record']
@@ -614,7 +611,8 @@ class Simplehkjcspider(scrapy.Spider):
             marginsbehindleader= marginsbehindleader,
             racedate=self.racedate,
             racecoursecode=self.racecoursecode,
-            winodds = response.meta['winodds'][horsenumber],
+            # winodds = response.meta['winodds'][horsenumber],
+            winodds = winodds,
             racepace =response.meta['racepace'],
             racetrainers = response.meta['racetrainers'],
             winningsecs= response.meta['winningsecs'],
