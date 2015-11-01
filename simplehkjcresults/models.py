@@ -128,13 +128,13 @@ class Raceday(Base):
     id = Column(BigInteger, primary_key = True, autoincrement = True, nullable = False) 
     racedate = Column(Date, nullable=False)
     racecoursecode = Column(String(2))
-    runners_list = Column(postgresql.ARRAY(String(5))) #skips race
+
 
     __table_args__ = (UniqueConstraint('racedate', 'racecoursecode'),)
-#     def __init__(self, racedate, racecoursecode, runners_list):
-#         self.racedate= racedate
-#         self.racecoursecode = racecoursecode
-#         self.runners_list = runners_list
+    def __init__(self, racedate, racecoursecode, runners_list):
+        self.racedate= racedate
+        self.racecoursecode = racecoursecode
+
 
 class Race(Base):
     __tablename__ = "race"
@@ -146,6 +146,10 @@ class Race(Base):
     racegoing = Column(String(10)) #GF GY Y 
     racesurface = Column(String(15)) #AWT or B+3
     racedistance = Column(Integer) # 1000
+    racepace = Column(Float)
+    recordtimeperlength = Column(Float)
+    recordtime = Column(Float)
+    stdtime = Column(Float)
     marketorder = Column(String(15))
     winoddsranks = Column(postgresql.ARRAY(Integer))
     winodds = Column(Float)
@@ -179,29 +183,27 @@ class Race(Base):
     jockeychallenge_combo_div = Column(postgresql.ARRAY(String))
     tripletriocons_combo_div= Column(postgresql.ARRAY(String))
     tripletrio_combo_div= Column(postgresql.ARRAY(String))
+    A1topfavs_windiv = Column(postgresql.ARRAY(Float))
+    A2midpricers_windiv =Column(postgresql.ARRAY(Float))
+    A3outsiders_windiv = Column(postgresql.ARRAY(Float))
+    winningjockeycode = Column(String(15))
+    winningtrainercode= Column(String(15))
+    winningsecs =Column(postgresql.ARRAY(Float))
     raceday_id = Column(Integer, ForeignKey('raceday.id'))
 
     raceday = relationship("Raceday", 
         backref=backref('races', lazy='dynamic'))
     __table_args__ = (UniqueConstraint('raceday_id', 'racenumber'),)
     
-    def __init__(self, racedate, racecoursecode, racenumber, racename, raceclass, racerating, racegoing,racesurface, racedistance, utcracetime,
+    def __init__(self, raceday_id, racenumber, racename, raceclass, racerating, racegoing,racesurface, racedistance, utcracetime,
          marketorder, theresult, marketorder, winodds, favpos, favodds, norunners,theresults,race_total_prob,
 		win_combo_div,place_combo_div,qn_combo_div,qnp_combo_div,tce_combo_div,trio_combo_div,f4_combo_div,qtt_combo_div,
 		dbl9_combo_div,dbl8_combo_div,dbl7_combo_div, dbl6_combo_div,dbl5_combo_div,dbl4_combo_div,dbl3_combo_div,
-    dbl2_combo_div,
-    dbl1_combo_div,
-    dbl10_combo_div,
-    dbltrio1_combo_div,
-    dbltrio2_combo_div,
-    dbltrio3_combo_div,
-    sixup_combo_div,
-    jockeychallenge_combo_div,
-    tripletriocons_combo_div,
-    tripletrio_combo_div,
+    dbl2_combo_div,dbl1_combo_div,dbl10_combo_div,dbltrio1_combo_div,dbltrio2_combo_div,
+    dbltrio3_combo_div,sixup_combo_div,jockeychallenge_combo_div,tripletriocons_combo_div,tripletrio_combo_div,
+    winningtrainercode, winningjockeycode, winningsecs,recordtimeperlength, recordtime, stdtime, race_total_prob,racepace,
     	):
-    	self.racedate = racedate,
-    	self.racecoursecode = racecoursecode,
+
     	self.racename = racename,
     	self.racerating = racerating,
     	self.racegoing = racegoing,
@@ -239,9 +241,15 @@ class Race(Base):
 	    self.jockeychallenge_combo_div=jockeychallenge_combo_div,
 	    self.tripletriocons_combo_div=tripletriocons_combo_div,
 	    self.tripletrio_combo_div=tripletrio_combo_div
+        self.winningjockeycode = winningjockeycode,
+        self.winningtrainercode = winningtrainercode,
+        self.winningsecs = winningsecs,
+        self.recordtimeperlength= recordtimeperlength,
+        self.recordtime= recordtime,
+        self.stdtime= stdtime,
+        self.race_total_prob=race_total_prob,
+        self.racepace=racepace
 
-  
-  ##results go in r_runner same index
 class Runner(Base):
     __tablename__ = "runner"
     id = Column(BigInteger, primary_key = True, autoincrement = True, nullable = False) 
@@ -254,29 +262,20 @@ class Runner(Base):
     isScratched = Column(Boolean)
     priority = Column(String(100))
     gear = Column(String(20))
-    placing= Column(Integer)
-    finish_time = Column(Float) #seconds
+    finishtime = Column(Float) #seconds
     marginsbehindleader = Column(postgresql.ARRAY(Float)) #floats
-    positions = Column(postgresql.ARRAY(Integer)) #ints
-    timelist= Column(postgresql.ARRAY(Float))
-    scmp_runner_comment = Column(String(256))
-    barriertimes = Column(postgresql.ARRAY(String(100)))
-    jumptimes = Column(postgresql.ARRAY(String(100)))
-    totalbarrier = Column(postgresql.ARRAY(Integer)) 
-    totalcanter =Column(postgresql.ARRAY(Integer)) 
-    totaljump = Column(postgresql.ARRAY(Integer)) 
-    totalswim = Column(postgresql.ARRAY(Integer)) 
-    owner_id = Column(Integer, ForeignKey('owner.id'))
-    owner = relationship("Owner", 
-        backref=backref('runners', lazy='dynamic'))
+    runningpositions = Column(postgresql.ARRAY(Integer)) #ints
+    sec_timelist= Column(postgresql.ARRAY(Float))
+    market_prob = Column(Float)
+    place = Column(String(20))
+    winodds = Column(Float)
+    winoddsrank = Column(Integer)
+
 
     jockey_id = Column(Integer, ForeignKey('jockey.id'))
     jockey = relationship("Jockey", 
         backref=backref('runners', lazy='dynamic'))
 
-    trainer_id = Column(Integer, ForeignKey('trainer.id'))
-    trainer = relationship("Trainer", 
-        backref=backref('runners', lazy='dynamic'))
 
     horse_id = Column(Integer, ForeignKey('horse.id'))
     horse = relationship("Horse", 
@@ -288,37 +287,33 @@ class Runner(Base):
 
     __table_args__ = (UniqueConstraint('race_id', 'horse_id'),)
 
-#     def __init__(self, race_id, horsenumber, horse_id, jockey_id, trainer_id, owner_id,
-#         todaysrating, lastwonat, isMaiden, seasonstakes, draw, priority, gear,placing, finish_time,
-#         marginsbehindleader, positions, timelist,scmp_runner_comment, barriertimes, 
-#         jumptimes,totalbarrier, totalcanter, totaljump, totalswim, isScratched=False,):
-#         self.race_id = race_id
-#         self.horsenumber = horsenumber
-#         self.horse_id = horse_id
-#         self.trainer_id = trainer_id
-#         self.jockey_id = jockey_id
-#         self.owner_id = owner_id
-#     
-#         self.todaysrating = todaysrating
-#         self.lastwonat= lastwonat
-#         self.isMaiden = isMaiden
-#         self.seasonstakes = seasonstakes
-#         self.draw= draw
-#         self.isScratched = isScratched
-#         self.priority = priority
-#         self.gear = gear
-#         self.placing = placing
-#         self.finish_time = finish_time
-#         self.marginsbehindleader = marginsbehindleader
-#         self.positions = positions
-#         self.timelist = timelist
-#         self.scmp_runner_comment = scmp_runner_comment
-#         self.barriertimes = barriertimes
-#         self.jumptimes = jumptimes
-#         self.totalbarrier = totalbarrier
-#         self.totalcanter = totalcanter
-#         self.totaljump = totaljump
-#         self.totalswim =totalswim 
+    def __init__(self, horsenumber, todaysrating, lastwonat, isMaiden, seasonstakes, draw, priority, gear,
+        finishtime,
+        marginsbehindleader, runningpositions, sec_timelist,market_prob, place, winodds, winoddsrank,
+        jockey_id, horse_id, race_id, 
+        isScratched=False,
+        ):
+        self.race_id = race_id
+        self.horsenumber = horsenumber
+        self.horse_id = horse_id
+        self.jockey_id = jockey_id
+        self.todaysrating = todaysrating
+        self.lastwonat= lastwonat
+        self.isMaiden = isMaiden
+        self.seasonstakes = seasonstakes
+        self.draw= draw
+        self.isScratched = isScratched
+        self.priority = priority
+        self.gear = gear
+        self.placing = placing
+        self.finish_time = finish_time
+        self.marginsbehindleader = marginsbehindleader
+        self.runningpositions = runningpositions
+        self.sec_timelist = sec_timelist
+        self.market_prob =market_prob
+        self.place = place
+        self.winodds = winodds
+        self.winoddsrank = winoddsrank
 
 # ### tipster
 # class t_System(db.Model):
