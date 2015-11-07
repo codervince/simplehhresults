@@ -33,8 +33,8 @@ hkmeets = {
 "20151010": "ST",
 "20151014": "HV",
 "20151018": "ST",
-"20151022": "HV" #expecting 12+12+12+12+12+12+11+1+12
-"20151025": "ST" #expecting 133 runners
+"20151022": "HV", #expecting 12+12+12+12+12+12+11+1+12
+"20151025": "ST", #expecting 133 runners
 }
 
 # hkmeets = {
