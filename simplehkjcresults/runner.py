@@ -1,12 +1,15 @@
 from subprocess import Popen
 from datetime import datetime
 import time
+import settings
+import os
 
 def runSpider(rc,rd):
-	# scrapy crawl simpleraceday -a racecoursecode=HV -a racedate=20151007
-    p = Popen(["scrapy", "crawl", "simplehkjcresults", "-a", "racecoursecode={}".format(rc), "-a",\
-    	"date={}".format(rd)]\
-    	,cwd="/home/vmac/simplehkjcresults/simplehkjcresults")
+    # scrapy crawl simpleraceday -a racecoursecode=HV -a racedate=20151007
+    env_path = os.path.join(settings.ROOT_DIR, 'env', 'bin', 'scrapy')
+    p = Popen([os.path.exists(env_path) and env_path or "scrapy", "crawl", 
+		"simplehkjcresults", "-a", "racecoursecode={}".format(rc), "-a",
+    	"date={}".format(rd)], cwd=settings.BASE_DIR)
     stdout, stderr = p.communicate()
     time.sleep(15)
 
@@ -46,4 +49,4 @@ hkmeets = {
 
 ##implement as queue and return no of items returned compare 
 for rd,rc in hkmeets.items():
-	runSpider(rc, rd)
+    runSpider(rc, rd)

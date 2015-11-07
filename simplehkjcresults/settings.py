@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime
+import os
 # Scrapy settings for simplehkjcresults project
 #
 # For simplicity, this file contains only settings considered important or
@@ -8,6 +9,9 @@ from datetime import datetime
 #     http://doc.scrapy.org/en/latest/topics/settings.html
 #     http://scrapy.readthedocs.org/en/latest/topics/downloader-middleware.html
 #     http://scrapy.readthedocs.org/en/latest/topics/spider-middleware.html
+
+BASE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'simplehkjcresults')
+ROOT_DIR = os.path.dirname(BASE_DIR)
 
 BOT_NAME = 'simplehkjcresults'
 

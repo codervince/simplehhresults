@@ -8,12 +8,14 @@ from simplehkjcresults.utilities import *
 import pprint
 from simplehkjcresults import items
 import sys
+import os
+from simplehkjcresults import settings
 
 logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 logger = logging.getLogger()
 
-STANDARD_TIMES_T = "/home/vmac/simplehkjcresults/simplehkjcresults/standardtimes.csv"
-STANDARD_TIMES_AWT = "/home/vmac/simplehkjcresults/simplehkjcresults/standardtimesawt.csv"
+STANDARD_TIMES_T = os.path.join(settings.BASE_DIR, "standardtimes.csv")
+STANDARD_TIMES_AWT = os.path.join(settings.BASE_DIR, "standardtimesawt.csv")
 class Vividict(dict):
     def __missing__(self, key):
         value = self[key] = type(self)()
