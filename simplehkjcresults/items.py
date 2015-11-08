@@ -82,5 +82,9 @@ class SimplehkjcresultsItem(scrapy.Item):
     tripletrio_combo_div= scrapy.Field()
     sixup_combo_div = scrapy.Field()
     jockeychallenge_combo_div = scrapy.Field()
+    raceday_id = scrapy.Field()
+    jockey_id = scrapy.Field()
+    horse_id = scrapy.Field()
+    race_id = scrapy.Field()
 
 

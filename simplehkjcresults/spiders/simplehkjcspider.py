@@ -108,6 +108,11 @@ class Simplehkjcspider(scrapy.Spider):
         newraceinfo = response.xpath('//table[@class ="tableBorder0 font13"]//*[self::td or self::td/span]//text()').extract()
         
         logger.info("newraceinfo {}".format(newraceinfo))
+        racedistance = None
+        newsectionaltimes = None
+        thisracefinishtime = None
+        racesurface = None
+        raceclass = None
         if ri:
            _raceindex = raceindex_path.findall(ri[0])[0]
         if len(newraceinfo)>0:
@@ -166,8 +171,9 @@ class Simplehkjcspider(scrapy.Spider):
                 _winningdivs.append(w)
         ##RUNNERS
 
-
-        sectional_time_url = response.xpath('//div[@class="rowDiv15"]/div[@class="rowDivRight"]/a/@href').extract()[0]
+        sectional_time_url_ = response.xpath('//div[@class="rowDiv15"]/div[@class="rowDivRight"]/a/@href').extract()
+        assert sectional_time_url_, "Can't define sectional_time_url from xpath. Try again."
+        sectional_time_url = sectional_time_url_[0]
         horsecodelist_ = response.xpath('//table[@class="tableBorder trBgBlue'
             ' tdAlignC number12 draggable"]//td[@class="tdAlignL font13'
             ' fontStyle"][1]/text()').extract()
@@ -194,9 +200,10 @@ class Simplehkjcspider(scrapy.Spider):
         # print "sum of market probs {} market_probs {}".format(race_total_prob, market_probs)
         
         # print hplaces, winodds_
-        racingincidentreport = response.xpath('//tr[td[contains(text(), '
+        racingincidentreport_ = response.xpath('//tr[td[contains(text(), '
             '"Racing Incident Report")]]/following-sibling::tr/td/text()'
-            ).extract()[0]
+            ).extract()
+        racingincidentreport = racingincidentreport_ and racingincidentreport_[0]
         # print(racingincidentreport)
         # print santitizeracereport(racingincidentreport)
 
@@ -216,10 +223,14 @@ class Simplehkjcspider(scrapy.Spider):
         even_runners = 2
         ### WHAT HAPPENS IF THE HORSE HAS A BLANK HORSE NUMBER WHICH MEANS SCRATCHED!?
         for row in response.xpath("//table[@class='tableBorder trBgBlue tdAlignC number12 draggable']//tr[@class='trBgGrey']"):
-            horsenos[odd_runners] = row.xpath('./td[1]/text()').extract()[0] or row.xpath('./td[position()=1 and (text() or not(text()))]').extract()[0]
-            places[odd_runners] = row.xpath('./td[2]/text()').extract()[0] or row.xpath('./td[position()=2 and (text() or not(text()))]').extract()[0]
+            horsenos_ = row.xpath('./td[1]/text()').extract()
+            horsenos__ = row.xpath('./td[position()=1 and (text() or not(text()))]').extract()
+            horsenos[odd_runners] = horsenos_[0] if horsenos_ else None or horsenos__[0] if horsenos__ else None
+            places_ = row.xpath('./td[2]/text()').extract()
+            places__ = row.xpath('./td[position()=2 and (text() or not(text()))]').extract()
+            places[odd_runners] = places_[0] if places_ else None or places__[0] if places__ else None
             # places[odd_runners] = row.xpath('./td[2]/text()').extract()[0] or 99
-            _runningpositions = row.xpath('./td[10]/table//td//text()').extract() or 0
+            _runningpositions = row.xpath('./td[10]/table//td//text()').extract() or []
             _actualwts = row.xpath('./td[6]//text()').extract()[0] or 0
             _jockeycode = row.xpath('./td[4]/a/@href').extract()[0] or 0
             _trainercode = row.xpath('./td[5]/a/@href').extract()[0] or 0
@@ -240,7 +251,7 @@ class Simplehkjcspider(scrapy.Spider):
             places[even_runners] = row.xpath('./td[2]/text()').extract()[0] or row.xpath('./td[position()=2 and (text() or not(text()))]').extract()[0]
             #     horsenos[even_runners] = row.xpath('./td[position()=1 and (text() or not(text()))]').extract()[0] or 99
                 # places[even_runners] = row.xpath('./td[position()=2 and (text() or not(text()))]').extract()[0] or 99
-            _runningpositions = row.xpath('./td[10]/table//td//text()').extract() or 0
+            _runningpositions = row.xpath('./td[10]/table//td//text()').extract() or []
             _actualwts = row.xpath('./td[6]//text()').extract()[0] or 0
             _jockeycode = row.xpath('./td[4]/a/@href').extract()[0] or 0
             _trainercode = row.xpath('./td[5]/a/@href').extract()[0] or 0
@@ -286,8 +297,8 @@ class Simplehkjcspider(scrapy.Spider):
                  sp10f11f12f_windiv = _winningdivs
 
         favs_horsenumbers = [ x for x in winoddsranks if x =='1']
-        favpos = winoddsranks.keys().index(1)+1
-        favodds = min(winodds.values())
+        favpos = winoddsranks.keys().index(1)+1 if 1 in winoddsranks.keys() else None
+        favodds = min(winodds.values()) if winodds else None
         _winningdivs = map(float, _winningdivs)
         if bool(set(_winninghorsenumbers) & set(sp1f2f3f)) :
             sp1f2f3f_windiv = _winningdivs
@@ -321,8 +332,8 @@ class Simplehkjcspider(scrapy.Spider):
         horsecodes = OrderedDict(sorted(horsecodes.items(), key=lambda t: t[0]))
         trainercodes = OrderedDict(sorted(trainercodes.items(), key=lambda t: t[0]))
 
-        winningjockeycode = jockeycodes.items()[0][1]
-        winningtrainercode = trainercodes.items()[0][1]
+        winningjockeycode = jockeycodes.items()[0][1] if jockeycodes else None
+        winningtrainercode = trainercodes.items()[0][1] if trainercodes else None
 
         finishtimes = OrderedDict(sorted(finishtimes.items(), key=lambda t: t[0]))
         print "horsenos: {}, places --> {}, winodds {} plus horsecodes {} and trainercodes {} and finishtimes {} and actualwts{} and jockeycodes{} and runningpositions {}".\
@@ -356,8 +367,10 @@ class Simplehkjcspider(scrapy.Spider):
         #get raceclass for speeds
         raceclass = get_raceclassforspeeds(raceclass)
 
-        stdtime = standardspeeds['20150906'][self.racecoursecode][racedistance][raceclass]['finish']
-        recordtime =  standardspeeds['20150906'][self.racecoursecode][racedistance][raceclass]['record']
+        stdtime_ = standardspeeds['20150906'][self.racecoursecode][racedistance][raceclass]['finish']
+        stdtime = stdtime_ or None
+        recordtime_ =  standardspeeds['20150906'][self.racecoursecode][racedistance][raceclass]['record']
+        recordtime = recordtime_ or None
         logger.info("racesurface {} raceclass {}, stdtime {}, recordtime {}".format(racesurface, raceclass, stdtime, recordtime))
 
         ##situation where no entry?
@@ -369,14 +382,18 @@ class Simplehkjcspider(scrapy.Spider):
         stdsec5 =  standardspeeds['20150906'][self.racecoursecode][racedistance][raceclass]['sec5']
         stdsec6 =  standardspeeds['20150906'][self.racecoursecode][racedistance][raceclass]['sec6']
         # racepace = stdtime = recordime = None
+        racepace = None
         if thisracefinishtime and stdtime:
             stdtime = float(stdtime)
             racepace = round(float(thisracefinishtime) - stdtime,2)
-        if recordtime:       
-            recordtime = float(recordtime)
-        stdsec1 = float(stdsec1)
-        stdsec2 = float(stdsec2)
-        stdsec3 = float(stdsec3)
+        if recordtime:
+            try:  
+                recordtime = float(recordtime)
+            except ValueError:
+                recordtime = None
+        stdsec1 = stdsec1 and float(stdsec1)
+        stdsec2 = stdsec2 and float(stdsec2)
+        stdsec3 = stdsec3 and float(stdsec3) 
         if stdsec4:
             stdsec4 = try_float(stdsec4)
         if stdsec5:
@@ -477,9 +494,10 @@ class Simplehkjcspider(scrapy.Spider):
             'stdsec1':stdsec5,
             'stdsec1':stdsec6,
             ##interim solution - todo: create proper sets A1, A2, A3
-            'A1topfavs_windiv' : sp1f2f3f_windiv,
+            'A1topfavs_windiv' : sp1f2f3f_windiv or [],
             'A2midpricers_windiv' : sp4f5f6f_windiv,
-            'A3outsiders_windiv' : sp7f8f9f_windiv+ sp10f11f12f_windiv,
+            'A3outsiders_windiv' : sp7f8f9f_windiv+ sp10f11f12f_windiv if 
+                sp7f8f9f_windiv and sp10f11f12f_windiv else None,
             # 'raceindex': raceindex,
             # 'racegoing': racegoing,
             # 'raceclass': raceclass,
@@ -573,7 +591,7 @@ class Simplehkjcspider(scrapy.Spider):
             		_hc_idx, hc = x,y
             if _hc_idx:
             	finishtime = response.meta['finishtimes'][_hc_idx]
-            	market_prob = response.meta['market_probs'][_hc_idx]
+            	market_prob = response.meta['market_probs'].get(_hc_idx)
             	jockeycode = response.meta['jockeycodes'][_hc_idx]
             	place = response.meta['places'][_hc_idx]
             	runningpositions = response.meta['runningpositions'][_hc_idx]

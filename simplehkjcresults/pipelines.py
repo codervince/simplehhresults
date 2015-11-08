@@ -12,8 +12,8 @@ import items
 import sqlalchemy
 from collections import *
 # from simplehkresultd.items import *
-from simplehkresultd.models import *
-from simplehkresultd import models
+#from simplehkresultd.models import *
+from simplehkjcresults import models
 # Define your item pipelines here
 #
 # Don't forget to add your pipeline to the ITEM_PIPELINES setting
@@ -76,6 +76,27 @@ def get_or_create_pl(model, item):
     session.refresh(instance)  # Refreshing before session close
     session.close()
     return instance
+
+
+class SimpleHKJCResultsPipelineTemp(object):
+
+    def process_item(self, item, spider):
+
+        if not isinstance(item, items.SimplehkjcresultsItem):
+            return
+
+        horse = get_or_create_pl(models.Horse, item)
+        jockey = get_or_create_pl(models.Jockey, item)
+        raceday = get_or_create_pl(models.Raceday, item)
+ 
+        item['raceday_id'] = raceday.id
+        race = get_or_create_pl(models.Race, item)
+
+        item['jockey_id'] = jockey.id
+        item['horse_id'] = horse.id
+        item['race_id'] = race.id
+        get_or_create_pl(models.Runner, item)
+
 
 class SimpleHKJCResultsPipeline(object):
 

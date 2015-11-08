@@ -17,6 +17,9 @@ BOT_NAME = 'simplehkjcresults'
 
 SPIDER_MODULES = ['simplehkjcresults.spiders']
 
+ITEM_PIPELINES = {
+    "simplehkjcresults.pipelines.SimpleHKJCResultsPipelineTemp":100,
+}
 
 DOWNLOAD_HANDLERS = {
   's3': None,
@@ -30,7 +33,7 @@ AWS_SECRET_ACCESS_KEY = ""
 USER_AGENT = "Googlebot/2.1 ( http://www.google.com/bot.html)"
 
 # AUTOTHROTTLE_ENABLED = True
-LOG_FILE = "scrapy_%s_%s.log" % ('hkjcsimpleresults_', datetime.now().date())
+#LOG_FILE = "scrapy_%s_%s.log" % ('hkjcsimpleresults_', datetime.now().date())
 # DATABASE = {'drivername': 'postgres',
 #             'host': 'localhost',
 #             'port': '5432',

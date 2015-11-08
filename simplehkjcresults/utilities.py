@@ -386,7 +386,7 @@ def get_surface_railtype(s):
         return _surf, _rail
 
 def get_raceclassforspeeds(cl):
-    cl = cl.strip()
+    cl = cl and cl.strip()
     hkjcclasses = {
     "Hong Kong Group One": u'Group',
     "Hong Kong Group Two": u'Group',
