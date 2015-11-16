@@ -80,6 +80,11 @@ def get_or_create_pl(model, item):
 
 class SimpleHKJCResultsPipelineTemp(object):
 
+    def __init__(self, *args, **kwargs):
+        super(SimpleHKJCResultsPipelineTemp, self).__init__(*args, **kwargs)
+        engine = create_engine(URL(**settings.DATABASE))
+        models.Base.metadata.create_all(engine)
+
     def process_item(self, item, spider):
 
         if not isinstance(item, items.SimplehkjcresultsItem):
