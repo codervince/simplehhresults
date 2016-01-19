@@ -69,35 +69,52 @@ class Simplehkjcspider(scrapy.Spider):
         self.newbaseurl =  'http://racing.hkjc.com/racing/Info/Meeting/Results/English/Local/{date}/{racecoursecode}/'.format(domain=self.hkjc_domain,date=date, racecoursecode=racecoursecode) 
         ##these have been changed
         ##new urls = http://racing.hkjc.com/racing/Info/Meeting/Results/English/Local/20150919/ST/2
-        self.start_urls = [
-            'http://racing.hkjc.com/racing/Info/Meeting/Results/English/Local/'
-            '{date}/{racecoursecode}/1'.format(domain=self.hkjc_domain, 
-                date=date, racecoursecode=racecoursecode),
-        ]
-    
-    def parse(self, response):
-        race_paths = response.xpath('//td[@nowrap="nowrap" and @width="24px"]'
-            '/a/@href').extract()
-        urls = ['http://{path}'.format(
-                domain=self.hkjc_domain,
-                path=path,
-            ) for path in race_paths
-        ] + [response.url]
-        # race 1 is missing
-        urls.append("http://racing.hkjc.com/racing/Info/Meeting/Results/English/Local/{}/{}/1".format(self.racedate, self.racecoursecode))
-        for url in urls: 
-            if int(url.split('/')[-1]) > 9:
-                racenumber = '{}'.format(url.split('/')[-1])
-            else:
-                racenumber = '{}'.format(url.split('/')[-1])
-            url = self.newbaseurl + racenumber
-            # print url
-            request = scrapy.Request(url, callback=self.parse_race)
-            request.meta['racenumber'] = racenumber
-            yield request
+        # self.start_urls = [
+        #     'http://racing.hkjc.com/racing/Info/Meeting/Results/English/Local/'
+        #     '{date}/{racecoursecode}/1'.format(domain=self.hkjc_domain, 
+        #         date=date, racecoursecode=racecoursecode),
+        # ]
 
-    def parse_race(self, response):
-        '''racestats'''
+    def start_requests(self):
+        #take initial url and extend to cover all races add to start urls
+        #create list then return
+        urls = list()
+        for i in range(1,13):
+            yield scrapy.Request( self.newbaseurl+'{0:01d}'.format(i), self.parse)
+            # yield scrapy.Request( self.newbaseurl+'{0:02d}'.format(i), self.parse)
+    
+    # def parse(self, response):
+    #     race_paths = response.xpath('//td[@nowrap="nowrap" and @width="24px"]'
+    #         '/a/@href').extract()
+    #     urls = ['http://{path}'.format(
+    #             domain=self.hkjc_domain,
+    #             path=path,
+    #         ) for path in race_paths
+    #     ] + [response.url]
+    #     # race 1 is missing
+    #     urls.append("http://racing.hkjc.com/racing/Info/Meeting/Results/English/Local/{}/{}/1".format(self.racedate, self.racecoursecode))
+    #     for url in urls: 
+    #         if int(url.split('/')[-1]) > 9:
+    #             racenumber = '{}'.format(url.split('/')[-1])
+    #         else:
+    #             racenumber = '{}'.format(url.split('/')[-1])
+    #         url = self.newbaseurl + racenumber
+    #         # print url
+    #         request = scrapy.Request(url, callback=self.parse_race)
+    #         request.meta['racenumber'] = racenumber
+    #         yield request
+
+    def parse(self, response):
+        skiprace = False
+        norace = response.xpath("//div[@class='contentR1']//text()").extract()
+        if norace and norace[0] == 'No Information.':
+            skiprace = True
+
+        logger.info('A response from %s just arrived!', response.url)
+        if int(response.url.split('/')[-1]) > 9:
+            self.racenumber = '{}'.format(response.url.split('/')[-1])
+        else:
+            self.racenumber = '{}'.format(response.url.split('/')[-1])
         #RACESTATS
         #[u'Class 4 - ', u'1650M - (60-40)', u'Going :', u'WET SLOW', u'SUNBIRD HANDICAP', u'Course :', u'ALL WEATHER TRACK', u'HK$ 800,000', u'Time :', u'(28.53)', u'(52.70)', u'(1.17.43)', u'(1.41.38)', u'\xa0', u'Sectional Time :', u'28.53', u'24.17', u'24.73', u'23.95', u'\xa0Multi Angle Race Replay', u'\xa0\xa0\xa0\xa0', u'\xa0Pass Through Analysis', u'\xa0\xa0\xa0\xa0', u'\xa0Aerial Virtual Replay']
 
@@ -171,8 +188,10 @@ class Simplehkjcspider(scrapy.Spider):
                 _winningdivs.append(w)
         ##RUNNERS
 
-        sectional_time_url_ = response.xpath('//div[@class="rowDiv15"]/div[@class="rowDivRight"]/a/@href').extract()
+        sectional_time_url_ = response.xpath('//div[@class="rowDiv15"]/div[@class="rowDivRight"]/a[@href]').extract()
+        ##THIS FAILS FOR RACENO 1 why?
         assert sectional_time_url_, "Can't define sectional_time_url from xpath. Try again."
+
         sectional_time_url = sectional_time_url_[0]
         horsecodelist_ = response.xpath('//table[@class="tableBorder trBgBlue'
             ' tdAlignC number12 draggable"]//td[@class="tdAlignL font13'
@@ -223,12 +242,14 @@ class Simplehkjcspider(scrapy.Spider):
         even_runners = 2
         ### WHAT HAPPENS IF THE HORSE HAS A BLANK HORSE NUMBER WHICH MEANS SCRATCHED!?
         for row in response.xpath("//table[@class='tableBorder trBgBlue tdAlignC number12 draggable']//tr[@class='trBgGrey']"):
-            horsenos_ = row.xpath('./td[1]/text()').extract()
-            horsenos__ = row.xpath('./td[position()=1 and (text() or not(text()))]').extract()
+            horsenos_ = row.xpath('./td[2]/text()').extract()
+            horsenos__ = row.xpath('./td[position()=2 and (text() or not(text()))]').extract()
             horsenos[odd_runners] = horsenos_[0] if horsenos_ else None or horsenos__[0] if horsenos__ else None
-            places_ = row.xpath('./td[2]/text()').extract()
-            places__ = row.xpath('./td[position()=2 and (text() or not(text()))]').extract()
+
+            places_ = row.xpath('./td[1]/text()').extract()
+            places__ = row.xpath('./td[position()=1 and (text() or not(text()))]').extract()
             places[odd_runners] = places_[0] if places_ else None or places__[0] if places__ else None
+
             # places[odd_runners] = row.xpath('./td[2]/text()').extract()[0] or 99
             _runningpositions = row.xpath('./td[10]/table//td//text()').extract() or []
             _actualwts = row.xpath('./td[6]//text()').extract()[0] or 0
@@ -247,8 +268,18 @@ class Simplehkjcspider(scrapy.Spider):
             finishtimes[odd_runners] = get_sec(_finishtime)
             odd_runners +=2
         for row in response.xpath("//table[@class='tableBorder trBgBlue tdAlignC number12 draggable']//tr[@class='trBgWhite']"):
-            horsenos[even_runners] = row.xpath('./td[1]/text()').extract()[0] or row.xpath('./td[position()=1 and (text() or not(text()))]').extract()[0]
-            places[even_runners] = row.xpath('./td[2]/text()').extract()[0] or row.xpath('./td[position()=2 and (text() or not(text()))]').extract()[0]
+
+            horsenos_ = row.xpath('./td[2]/text()').extract()
+            horsenos__ = row.xpath('./td[position()=2 and (text() or not(text()))]').extract()
+            horsenos[even_runners] = horsenos_[0] if horsenos_ else None or horsenos__[0] if horsenos__ else None
+
+            places_ = row.xpath('./td[1]/text()').extract()
+            places__ = row.xpath('./td[position()=1 and (text() or not(text()))]').extract()
+            places[even_runners] = places_[0] if places_ else None or places__[0] if places__ else None
+            # places[even_runners] = row.xpath('./td[2]/text()').extract()[0] or row.xpath('./td[position()=2 and (text() or not(text()))]').extract()[0]
+            # horsenos[even_runners] = row.xpath('./td[2]/text()').extract()[0] or row.xpath('./td[position()=2 and (text() or not(text()))]').extract()[0]
+            # ###THIS FAILS ON http://racing.hkjc.com/racing/Info/Meeting/Results/English/Local/20160117/ST/01 
+            # places[even_runners] = row.xpath('./td[2]/text()').extract()[0] or row.xpath('./td[position()=2 and (text() or not(text()))]').extract()[0]
             #     horsenos[even_runners] = row.xpath('./td[position()=1 and (text() or not(text()))]').extract()[0] or 99
                 # places[even_runners] = row.xpath('./td[position()=2 and (text() or not(text()))]').extract()[0] or 99
             _runningpositions = row.xpath('./td[10]/table//td//text()').extract() or []
@@ -341,7 +372,8 @@ class Simplehkjcspider(scrapy.Spider):
         
         if racedistance and racedistance != 0:
             winningtime = finishtimes.items()[0][1]/float(racedistance) #one and only winningtime
-            self.avgwinningtimes[response.meta['racenumber']] = winningtime
+            # self.avgwinningtimes[response.meta['racenumber']] = winningtime
+            self.avgwinningtimes[int(self.racenumber)] = winningtime
         runnerslist = horsecodes.values()
         _places = places.values()
         #look for DH
@@ -457,7 +489,7 @@ class Simplehkjcspider(scrapy.Spider):
         '''
         request = scrapy.Request(sectional_time_url, callback=self.parse_sectional_time)
         meta_dict = {
-            'racenumber': int(response.meta['racenumber']),
+            'racenumber': int(self.racenumber),
             'racedate': self.racedateo,
             'racecoursecode': self.racecoursecode,
             'racedistance': int(racedistance),
@@ -614,7 +646,7 @@ class Simplehkjcspider(scrapy.Spider):
             raceclass=  response.meta['raceclass'],
             racegoing =  response.meta['racegoing'],
             racesurface = response.meta['racesurface'],
-            racenumber=response.meta['racenumber'],
+            racenumber= int(self.racenumber),
             horsenumber=horsenumber,
             horsecode=horsecode,
             jockeycode=jockeycode,
